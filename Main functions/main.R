@@ -15,6 +15,14 @@ library(IDetect)
 # Some utility functions
 #==============================
 
+xlogx <- function(x) {
+  
+  z <- x * log(x)
+  z[is.na(z)] <- 0
+  z
+  
+}
+
 ## A function used in case we want to rescale the obtained values based on the
 ## standard deviation
 sigma_p <- function(x){
@@ -169,7 +177,7 @@ loglik_values <- function(x, b1 = Binary_seq(x)[[1]], y = cumul_sum_matrix(b1), 
 
 ## The approach based on the L_inf mean-dominant norm
 L_inf_norm <- function(x, thr_const = 0.9, thr_fin = thr_const * sqrt(log(length(x))),
-                           s = 1, e = length(x), points = 10, r_e_points = seq(points, l, points),
+                           s = 1, e = length(x), points = 15, r_e_points = seq(points, l, points),
                            l_e_points = seq(l - points + 1, 1, -points), k_l = 1, k_r = 1, gs= NULL,
                            rescale = FALSE, brn_list = Binary_seq(x, grid.size = gs)[[1]], 
                            cs = cumul_sum_matrix(brn_list)) {
@@ -266,7 +274,7 @@ L_inf_norm <- function(x, thr_const = 0.9, thr_fin = thr_const * sqrt(log(length
 
 ## The approach based on the L_2 mean-dominant norm
 L_2_norm <- function(x, thr_const = 0.6, thr_fin = thr_const * sqrt(log(length(x))),
-                            s = 1, e = length(x), points = 10, r_e_points = seq(points, l, points),
+                            s = 1, e = length(x), points = 15, r_e_points = seq(points, l, points),
                             l_e_points = seq(l - points + 1, 1, -points), k_l = 1, k_r = 1, gs= NULL,
                             rescale = FALSE, brn_list = Binary_seq(x, grid.size = gs)[[1]], 
                             cs = cumul_sum_matrix(brn_list)) {
@@ -362,36 +370,30 @@ L_2_norm <- function(x, thr_const = 0.6, thr_fin = thr_const * sqrt(log(length(x
 }
 
 ## The L_inf window related variant in the case of very long data sequences
-window_L_inf_norm <- function(xd, thr_con = NULL, c_win = 1000, w_points = 10, l_win = 5000, rsc = FALSE) {
+window_L_inf_norm <- function(xd, thr_con = NULL, c_win = 2000, w_points = 15, rsc = FALSE) {
   if (length(thr_con) == 0){thr_con = 0.8
   if (rsc == TRUE){thr_con = 1.9}}
   if (!(is.numeric(xd))){
     stop("The input in `xd' should be a numeric vector containing the data in
          which you would like to find change-points.")
   }
-  if ( (thr_con <= 0) || (w_points <= 0) || (c_win <= 0) || (l_win <= 0)){
-    stop("The threshold constant as well as the `w_points', `c_win', `l_win' arguments should
+  if ( (thr_con <= 0) || (w_points <= 0) || (c_win <= 0)){
+    stop("The threshold constant as well as the `w_points' and `c_win' arguments should
          be positive numbers.")
   }
   if ( (abs(w_points - round(w_points)) > .Machine$double.eps ^ 0.5)
-       || (abs(c_win - round(c_win)) > .Machine$double.eps ^ 0.5)
-       || (abs(l_win - round(l_win)) > .Machine$double.eps ^ 0.5)){
-    warning("The input values  for `w_points', `c_win', and  `l_win' should be positive integers.
+       || (abs(c_win - round(c_win)) > .Machine$double.eps ^ 0.5)){
+    warning("The input values  for `w_points' and `c_win' should be positive integers.
             If either of them is a positive real number then the integer part of the given number
             is used to obtain the result.")
   }
   lg <- length(xd)
   w_points <- as.integer(w_points)
-  c_win <- min(lg, c_win)
   c_win <- as.integer(c_win)
-  l_win <- as.integer(l_win)
   if (lg <= c_win) {
     u <- L_inf_norm(x = xd, thr_const = thr_con, points = w_points, rescale = rsc, gs = NULL)
     return(u)
-  } else if ((lg > c_win) & (lg <= l_win)) {
-    u <- L_inf_norm(x = xd, thr_const = thr_con, points = w_points, rescale = rsc, gs = c_win)
-    return(u)
-  }
+  } 
   else {
     bs <- Binary_seq(xd, grid.size = c_win)[[1]]
     cs <- cumul_sum_matrix(bs)
@@ -425,36 +427,30 @@ window_L_inf_norm <- function(xd, thr_con = NULL, c_win = 1000, w_points = 10, l
 }
 
 ## The L_2 window related variant in the case of very long data sequences
-window_L_2_norm <- function(xd, thr_con = NULL, c_win = 1000, w_points = 10, l_win = 5000, rsc = FALSE) {
+window_L_2_norm <- function(xd, thr_con = NULL, c_win = 2000, w_points = 15, rsc = FALSE) {
   if (length(thr_con) == 0){thr_con = 0.6
   if (rsc == TRUE){thr_con = 1}}
   if (!(is.numeric(xd))){
     stop("The input in `xd' should be a numeric vector containing the data in
          which you would like to find change-points.")
   }
-  if ( (thr_con <= 0) || (w_points <= 0) || (c_win <= 0) || (l_win <= 0)){
-    stop("The threshold constant as well as the `w_points', `c_win', `l_win' arguments should
+  if ( (thr_con <= 0) || (w_points <= 0) || (c_win <= 0)){
+    stop("The threshold constant as well as the `w_points' and `c_win' arguments should
          be positive numbers.")
   }
   if ( (abs(w_points - round(w_points)) > .Machine$double.eps ^ 0.5)
-       || (abs(c_win - round(c_win)) > .Machine$double.eps ^ 0.5)
-       || (abs(l_win - round(l_win)) > .Machine$double.eps ^ 0.5)){
-    warning("The input values  for `w_points', `c_win', and  `l_win' should be positive integers.
+       || (abs(c_win - round(c_win)) > .Machine$double.eps ^ 0.5)){
+    warning("The input values  for `w_points' and `c_win' should be positive integers.
             If either of them is a positive real number then the integer part of the given number
             is used to obtain the result.")
   }
   lg <- length(xd)
   w_points <- as.integer(w_points)
-  c_win <- min(lg, c_win)
   c_win <- as.integer(c_win)
-  l_win <- as.integer(l_win)
   if (lg <= c_win) {
     u <- L_2_norm(x = xd, thr_const = thr_con, points = w_points, rescale = rsc, gs = NULL)
     return(u)
-  } else if ((lg > c_win) & (lg <= l_win)) {
-    u <- L_2_norm(x = xd, thr_const = thr_con, points = w_points, rescale = rsc, gs = c_win)
-    return(u)
-  }
+  } 
   else {
     bs <- Binary_seq(xd, grid.size = c_win)[[1]]
     cs <- cumul_sum_matrix(bs)
@@ -493,9 +489,9 @@ window_L_2_norm <- function(xd, thr_con = NULL, c_win = 1000, w_points = 10, l_w
 #=================================================================
 
 ## The solution path obtained when the L_inf aproach is used in the overestimation step
-sol_path_L_inf <- function(x, thr_ic = NULL, points = 10, resc = FALSE) {
+sol_path_L_inf <- function(x, thr_ic = NULL, points = 15, resc = FALSE) {
   if (length(thr_ic) == 0){thr_ic = 0.7
-  if (resc == TRUE){thr_ic = 1.6}}
+  if (resc == TRUE){thr_ic = 1.7}}
   if (!(is.numeric(x))){
     stop("The input in `x' should be a numeric vector containing the data for
          which the solution path will be calculated.")
@@ -539,7 +535,7 @@ sol_path_L_inf <- function(x, thr_ic = NULL, points = 10, resc = FALSE) {
 }
 
 ## The solution path obtained when the L_2 aproach is used in the overestimation step
-sol_path_L_2 <- function(x, thr_ic = NULL, points = 10, resc = FALSE) {
+sol_path_L_2 <- function(x, thr_ic = NULL, points = 15, resc = FALSE) {
   if (length(thr_ic) == 0){thr_ic = 0.45
   if (resc == TRUE){thr_ic = 0.8}}
   if (!(is.numeric(x))){
@@ -587,10 +583,9 @@ sol_path_L_2 <- function(x, thr_ic = NULL, points = 10, resc = FALSE) {
 
 ## The result of the non-parametric information criterion approach when the L_inf
 ## norm is employed for the first, overestimation based step.
-model_selection_L_inf <- function(x, th_const = NULL, Kmax = 200, points = 10, rescale = FALSE, zeta = (log(length(x)))^(2.1)/2) {
+model_selection_L_inf <- function(x, th_const = NULL, Kmax = 200, points = 15, rescale = FALSE, zeta = (log(length(x)))^(2.1)/2) {
   if (length(th_const) == 0){th_const = 0.7
-  if (rescale == TRUE){th_const = 1.6}}
-  print(th_const)
+  if (rescale == TRUE){th_const = 1.7}}
   if (!(is.numeric(x))){
     stop("The input in `x' should be a numeric vector containing the data in
          which you want to look for change-points.")
@@ -652,7 +647,7 @@ model_selection_L_inf <- function(x, th_const = NULL, Kmax = 200, points = 10, r
 
 ## The result of the non-parametric information criterion approach when the L_2
 ## norm is employed for the first, overestimation based step.
-model_selection_L_2 <- function(x, th_const = NULL, Kmax = 200, points = 10, rescale = FALSE, zeta = (log(length(x)))^(2.1)/2) {
+model_selection_L_2 <- function(x, th_const = NULL, Kmax = 200, points = 15, rescale = FALSE, zeta = (log(length(x)))^(2.1)/2) {
   if (length(th_const) == 0){th_const = 0.45
   if (rescale == TRUE){th_const = 0.8}}
   if (!(is.numeric(x))){
